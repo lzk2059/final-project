@@ -1,0 +1,14 @@
+{
+  "No-Anomaly": 0,
+  "Cell": 1,
+  "Cell-Multi": 2,
+  "Cracking": 3,
+  "Diode": 4,
+  "Diode-Multi": 5,
+  "Hot-Spot": 6,
+  "Hot-Spot-Multi": 7,
+  "Offline-Module": 8,
+  "Shadowing": 9,
+  "Soiling": 10,
+  "Vegetation": 11
+}

@@ -1,0 +1,107 @@
+{
+  "classification_task": "12-class classification",
+  "number_of_classes": 12,
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "total_records": 20000,
+  "valid_images": 20000,
+  "invalid_or_missing_images": 0,
+  "exact_duplicate_groups": 22,
+  "label_conflict_groups": 6,
+  "clean_unique_images": 19972,
+  "image_sizes": {
+    "24x40": 20000
+  },
+  "image_modes": {
+    "L": 20000
+  },
+  "original_class_counts": {
+    "Cell": 1877,
+    "Cell-Multi": 1288,
+    "Cracking": 940,
+    "Diode": 1499,
+    "Diode-Multi": 175,
+    "Hot-Spot": 249,
+    "Hot-Spot-Multi": 246,
+    "No-Anomaly": 10000,
+    "Offline-Module": 827,
+    "Shadowing": 1056,
+    "Soiling": 204,
+    "Vegetation": 1639
+  },
+  "clean_class_counts": {
+    "Cell": 1876,
+    "Cell-Multi": 1286,
+    "Cracking": 937,
+    "Diode": 1496,
+    "Diode-Multi": 175,
+    "Hot-Spot": 248,
+    "Hot-Spot-Multi": 246,
+    "No-Anomaly": 10000,
+    "Offline-Module": 821,
+    "Shadowing": 1045,
+    "Soiling": 204,
+    "Vegetation": 1638
+  },
+  "split_sizes": {
+    "train": 13980,
+    "validation": 2996,
+    "test": 2996
+  },
+  "split_class_counts": {
+    "train": {
+      "Cell": 1313,
+      "Cell-Multi": 900,
+      "Cracking": 656,
+      "Diode": 1047,
+      "Diode-Multi": 122,
+      "Hot-Spot": 174,
+      "Hot-Spot-Multi": 172,
+      "No-Anomaly": 7000,
+      "Offline-Module": 575,
+      "Shadowing": 731,
+      "Soiling": 143,
+      "Vegetation": 1147
+    },
+    "validation": {
+      "Cell": 281,
+      "Cell-Multi": 193,
+      "Cracking": 141,
+      "Diode": 224,
+      "Diode-Multi": 26,
+      "Hot-Spot": 37,
+      "Hot-Spot-Multi": 37,
+      "No-Anomaly": 1500,
+      "Offline-Module": 123,
+      "Shadowing": 157,
+      "Soiling": 31,
+      "Vegetation": 246
+    },
+    "test": {
+      "Cell": 282,
+      "Cell-Multi": 193,
+      "Cracking": 140,
+      "Diode": 225,
+      "Diode-Multi": 27,
+      "Hot-Spot": 37,
+      "Hot-Spot-Multi": 37,
+      "No-Anomaly": 1500,
+      "Offline-Module": 123,
+      "Shadowing": 157,
+      "Soiling": 30,
+      "Vegetation": 245
+    }
+  }
+}

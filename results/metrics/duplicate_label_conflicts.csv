@@ -1,0 +1,13 @@
+﻿image_id,image_path,relative_path,original_label,class_label,exists,is_valid,width,height,mode,sha256,error,is_exact_duplicate,has_label_conflict
+7387,data/raw/extracted/InfraredSolarModules/images/7387.jpg,images/7387.jpg,Cracking,Cracking,True,True,24,40,L,31322a29f5580661a71b2bece539ad93bd52c5f76105d547722662a7cbed70ed,,True,True
+1124,data/raw/extracted/InfraredSolarModules/images/1124.jpg,images/1124.jpg,Diode,Diode,True,True,24,40,L,31322a29f5580661a71b2bece539ad93bd52c5f76105d547722662a7cbed70ed,,True,True
+4518,data/raw/extracted/InfraredSolarModules/images/4518.jpg,images/4518.jpg,Cell-Multi,Cell-Multi,True,True,24,40,L,b1cb94dc8a1359b16adcca1c9df33706ab993ac4acbcaffb110e8e30738ed16c,,True,True
+161,data/raw/extracted/InfraredSolarModules/images/161.jpg,images/161.jpg,Offline-Module,Offline-Module,True,True,24,40,L,b1cb94dc8a1359b16adcca1c9df33706ab993ac4acbcaffb110e8e30738ed16c,,True,True
+543,data/raw/extracted/InfraredSolarModules/images/543.jpg,images/543.jpg,Offline-Module,Offline-Module,True,True,24,40,L,bbbad2552990061d09d040014290772bf69c54358b3cc54f691485398158128a,,True,True
+5171,data/raw/extracted/InfraredSolarModules/images/5171.jpg,images/5171.jpg,Cell,Cell,True,True,24,40,L,bbbad2552990061d09d040014290772bf69c54358b3cc54f691485398158128a,,True,True
+3915,data/raw/extracted/InfraredSolarModules/images/3915.jpg,images/3915.jpg,Cell-Multi,Cell-Multi,True,True,24,40,L,bc4e451abff8f0e6420ff7dcfd11e2fe2513151d2a4da602925a2e307c3e7259,,True,True
+7027,data/raw/extracted/InfraredSolarModules/images/7027.jpg,images/7027.jpg,Cracking,Cracking,True,True,24,40,L,bc4e451abff8f0e6420ff7dcfd11e2fe2513151d2a4da602925a2e307c3e7259,,True,True
+450,data/raw/extracted/InfraredSolarModules/images/450.jpg,images/450.jpg,Offline-Module,Offline-Module,True,True,24,40,L,c90fe1d056dfa66bf38fdea6aa503f9a12d0235fcfa5d48112c81b77586f18c4,,True,True
+7484,data/raw/extracted/InfraredSolarModules/images/7484.jpg,images/7484.jpg,Cracking,Cracking,True,True,24,40,L,c90fe1d056dfa66bf38fdea6aa503f9a12d0235fcfa5d48112c81b77586f18c4,,True,True
+6888,data/raw/extracted/InfraredSolarModules/images/6888.jpg,images/6888.jpg,Hot-Spot,Hot-Spot,True,True,24,40,L,fe649168fbfe1901d32ddca49a2b95b37430d15085aec8f93f894b9528acfa5c,,True,True
+483,data/raw/extracted/InfraredSolarModules/images/483.jpg,images/483.jpg,Offline-Module,Offline-Module,True,True,24,40,L,fe649168fbfe1901d32ddca49a2b95b37430d15085aec8f93f894b9528acfa5c,,True,True

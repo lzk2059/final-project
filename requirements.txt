@@ -1,0 +1,6 @@
+# Add project dependencies here.
+pandas
+Pillow
+pandas
+Pillow
+scikit-learn
