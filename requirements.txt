@@ -1,6 +1,6 @@
 # Add project dependencies here.
-pandas
-Pillow
+matplotlib
+numpy
 pandas
 Pillow
 scikit-learn
