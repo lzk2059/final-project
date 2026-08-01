@@ -1,6 +1,16 @@
-# Configuration for EfficientNet experiments
-model: efficientnet_b0
-num_classes: 2
-epochs: 20
+# Original EfficientNet-B0 baseline experiment
+model_name: efficientnet_b0
+num_classes: 12
+pretrained: true
+epochs: 60
 batch_size: 32
-learning_rate: 0.001
+learning_rate: 0.0001
+weight_decay: 0.0001
+early_stopping_patience: 8
+random_seed: 42
+num_workers: 0
+optimizer_name: adamw
+loss_name: cross_entropy
+monitor: validation_macro_f1
+checkpoint_dir: checkpoints
+history_dir: results/metrics

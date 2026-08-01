@@ -6,11 +6,12 @@ import argparse
 import json
 import random
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 import numpy as np
 import torch
+import yaml
 from sklearn.metrics import accuracy_score, f1_score
 from torch import nn
 from torch.optim import AdamW
@@ -36,6 +37,9 @@ class TrainingConfig:
     num_workers: int = 0
     checkpoint_dir: str = "checkpoints"
     history_dir: str = "results/metrics"
+    optimizer_name: str = "adamw"
+    loss_name: str = "cross_entropy"
+    monitor: str = "validation_macro_f1"
 
     def __post_init__(self) -> None:
         if self.num_classes <= 1:
@@ -51,6 +55,16 @@ class TrainingConfig:
         if self.early_stopping_patience <= 0:
             raise ValueError(
                 "early_stopping_patience must be positive."
+            )
+        if self.optimizer_name.lower() != "adamw":
+            raise ValueError("Only optimizer_name='adamw' is supported.")
+        if self.loss_name.lower() != "cross_entropy":
+            raise ValueError(
+                "Only loss_name='cross_entropy' is currently supported."
+            )
+        if self.monitor.lower() != "validation_macro_f1":
+            raise ValueError(
+                "Only monitor='validation_macro_f1' is supported."
             )
 
 
@@ -311,19 +325,26 @@ def parse_arguments() -> argparse.Namespace:
         description="Train a baseline infrared classifier."
     )
     parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="YAML experiment configuration file.",
+    )
+    parser.add_argument(
         "--model",
         choices=("resnet18", "efficientnet_b0"),
-        default="resnet18",
+        default=None,
     )
-    parser.add_argument("--epochs", type=int, default=60)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--learning-rate", type=float, default=1e-4)
-    parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--patience", type=int, default=8)
-    parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--learning-rate", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=None)
+    parser.add_argument("--patience", type=int, default=None)
+    parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument(
         "--no-pretrained",
         action="store_true",
+        default=None,
         help="Do not load ImageNet-pretrained weights.",
     )
     parser.add_argument(
@@ -341,20 +362,58 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def load_training_config(arguments: argparse.Namespace) -> TrainingConfig:
+    """Merge defaults, an optional YAML file, and explicit CLI overrides."""
+
+    values = asdict(TrainingConfig())
+    valid_fields = {field.name for field in fields(TrainingConfig)}
+
+    if arguments.config is not None:
+        config_path = arguments.config.expanduser().resolve()
+        if not config_path.is_file():
+            raise FileNotFoundError(
+                f"Training configuration was not found: {config_path}"
+            )
+        with config_path.open("r", encoding="utf-8") as file:
+            yaml_values = yaml.safe_load(file)
+
+        if yaml_values is None:
+            yaml_values = {}
+        if not isinstance(yaml_values, dict):
+            raise TypeError(
+                "The top level of the training YAML must be a mapping."
+            )
+        unknown_fields = set(yaml_values) - valid_fields
+        if unknown_fields:
+            raise ValueError(
+                "Unknown training configuration field(s): "
+                f"{sorted(unknown_fields)}"
+            )
+        values.update(yaml_values)
+
+    command_line_overrides = {
+        "model_name": arguments.model,
+        "epochs": arguments.epochs,
+        "batch_size": arguments.batch_size,
+        "learning_rate": arguments.learning_rate,
+        "weight_decay": arguments.weight_decay,
+        "early_stopping_patience": arguments.patience,
+        "num_workers": arguments.num_workers,
+    }
+    for name, value in command_line_overrides.items():
+        if value is not None:
+            values[name] = value
+    if arguments.no_pretrained:
+        values["pretrained"] = False
+
+    return TrainingConfig(**values)
+
+
 def main() -> None:
     """Run training from command-line arguments."""
 
     arguments = parse_arguments()
-    config = TrainingConfig(
-        model_name=arguments.model,
-        epochs=arguments.epochs,
-        batch_size=arguments.batch_size,
-        learning_rate=arguments.learning_rate,
-        weight_decay=arguments.weight_decay,
-        early_stopping_patience=arguments.patience,
-        pretrained=not arguments.no_pretrained,
-        num_workers=arguments.num_workers,
-    )
+    config = load_training_config(arguments)
     train_model(
         config,
         max_train_batches=arguments.max_train_batches,

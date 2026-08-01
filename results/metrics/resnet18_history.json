@@ -3,11 +3,11 @@
     "model_name": "resnet18",
     "num_classes": 12,
     "epochs": 1,
-    "batch_size": 4,
+    "batch_size": 32,
     "learning_rate": 0.0001,
     "weight_decay": 0.0001,
     "early_stopping_patience": 8,
-    "pretrained": false,
+    "pretrained": true,
     "random_seed": 42,
     "num_workers": 0,
     "checkpoint_dir": "checkpoints",
@@ -21,24 +21,24 @@
     "total": 11182668,
     "trainable": 11182668
   },
-  "best_validation_macro_f1": 0.05555555555555555,
-  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\resnet18_debug_best.pt",
+  "best_validation_macro_f1": 0.5313911748279704,
+  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\resnet18_best.pt",
   "epochs_completed": 1,
-  "total_training_seconds": 0.6767119001597166,
+  "total_training_seconds": 1195.569405599963,
   "history": [
     {
       "epoch": 1,
       "train": {
-        "loss": 2.5248396396636963,
-        "accuracy": 0.25,
-        "macro_f1": 0.08333333333333333
+        "loss": 1.0034890166850219,
+        "accuracy": 0.6884835479256081,
+        "macro_f1": 0.39686122335772
       },
       "validation": {
-        "loss": 2.434617519378662,
-        "accuracy": 0.5,
-        "macro_f1": 0.05555555555555555
+        "loss": 0.7761507891367211,
+        "accuracy": 0.7546728971962616,
+        "macro_f1": 0.5313911748279704
       },
-      "epoch_seconds": 0.5068618000950664
+      "epoch_seconds": 1195.442434699973
     }
   ]
 }

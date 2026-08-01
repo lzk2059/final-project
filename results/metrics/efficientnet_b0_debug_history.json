@@ -11,7 +11,10 @@
     "random_seed": 42,
     "num_workers": 0,
     "checkpoint_dir": "checkpoints",
-    "history_dir": "results/metrics"
+    "history_dir": "results/metrics",
+    "optimizer_name": "adamw",
+    "loss_name": "cross_entropy",
+    "monitor": "validation_macro_f1"
   },
   "device": "cpu",
   "parameter_counts": {
@@ -21,7 +24,7 @@
   "best_validation_macro_f1": 0.0,
   "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\efficientnet_b0_debug_best.pt",
   "epochs_completed": 1,
-  "total_training_seconds": 0.7754554999992251,
+  "total_training_seconds": 0.843598100123927,
   "history": [
     {
       "epoch": 1,
@@ -35,7 +38,7 @@
         "accuracy": 0.0,
         "macro_f1": 0.0
       },
-      "epoch_seconds": 0.6766691999509931
+      "epoch_seconds": 0.7448811000213027
     }
   ]
 }
