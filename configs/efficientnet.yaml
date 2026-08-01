@@ -1,5 +1,6 @@
 # Original EfficientNet-B0 baseline experiment
 model_name: efficientnet_b0
+experiment_name: efficientnet_b0_cross_entropy_seed42
 num_classes: 12
 pretrained: true
 epochs: 60

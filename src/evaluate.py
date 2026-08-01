@@ -1,1 +1,1 @@
-\"\"\"Model evaluation entry point.\"\"\"
+"""Model evaluation entry point."""

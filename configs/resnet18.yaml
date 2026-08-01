@@ -1,5 +1,6 @@
 # ResNet-18 CNN baseline experiment
 model_name: resnet18
+experiment_name: resnet18_cross_entropy_seed42
 num_classes: 12
 pretrained: true
 epochs: 60

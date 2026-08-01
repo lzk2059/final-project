@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import time
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -40,6 +41,7 @@ class TrainingConfig:
     optimizer_name: str = "adamw"
     loss_name: str = "cross_entropy"
     monitor: str = "validation_macro_f1"
+    experiment_name: str | None = None
 
     def __post_init__(self) -> None:
         if self.num_classes <= 1:
@@ -66,6 +68,14 @@ class TrainingConfig:
             raise ValueError(
                 "Only monitor='validation_macro_f1' is supported."
             )
+        if self.experiment_name is not None and not re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9._-]*",
+            self.experiment_name,
+        ):
+            raise ValueError(
+                "experiment_name may contain only letters, numbers, dots, "
+                "underscores, and hyphens."
+            )
 
 
 def set_random_seed(seed: int) -> None:
@@ -89,6 +99,7 @@ def run_epoch(
     dataloader: DataLoader,
     loss_function: nn.Module,
     device: torch.device,
+    num_classes: int,
     optimizer: AdamW | None = None,
     max_batches: int | None = None,
 ) -> dict[str, float]:
@@ -114,9 +125,10 @@ def run_epoch(
 
         with torch.set_grad_enabled(training):
             logits = model(images)
-            if logits.ndim != 2 or logits.shape[1] != 12:
+            if logits.ndim != 2 or logits.shape[1] != num_classes:
                 raise ValueError(
-                    "Expected model output [batch_size, 12], received "
+                    "Expected model output "
+                    f"[batch_size, {num_classes}], received "
                     f"{tuple(logits.shape)}."
                 )
             loss = loss_function(logits, targets)
@@ -146,7 +158,7 @@ def run_epoch(
             all_targets,
             all_predictions,
             average="macro",
-            labels=list(range(12)),
+            labels=list(range(num_classes)),
             zero_division=0,
         ),
     }
@@ -216,10 +228,14 @@ def train_model(
         max_train_batches is not None
         or max_validation_batches is not None
     )
+    base_experiment_name = config.experiment_name or (
+        f"{config.model_name}_{config.loss_name}_seed"
+        f"{config.random_seed}"
+    )
     experiment_name = (
-        f"{config.model_name}_debug"
+        f"{base_experiment_name}_debug"
         if debug_run
-        else config.model_name
+        else base_experiment_name
     )
     checkpoint_path = (
         root / config.checkpoint_dir / f"{experiment_name}_best.pt"
@@ -244,6 +260,7 @@ def train_model(
             dataloader=loaders["train"],
             loss_function=loss_function,
             device=device,
+            num_classes=config.num_classes,
             optimizer=optimizer,
             max_batches=max_train_batches,
         )
@@ -252,6 +269,7 @@ def train_model(
             dataloader=loaders["validation"],
             loss_function=loss_function,
             device=device,
+            num_classes=config.num_classes,
             optimizer=None,
             max_batches=max_validation_batches,
         )

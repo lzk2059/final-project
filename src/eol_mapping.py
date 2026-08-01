@@ -1,1 +1,1 @@
-\"\"\"End-of-life mapping utilities.\"\"\"
+"""End-of-life mapping utilities."""
