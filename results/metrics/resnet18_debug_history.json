@@ -1,0 +1,41 @@
+{
+  "config": {
+    "model_name": "resnet18",
+    "num_classes": 12,
+    "epochs": 1,
+    "batch_size": 4,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 8,
+    "pretrained": false,
+    "random_seed": 42,
+    "num_workers": 0,
+    "checkpoint_dir": "checkpoints",
+    "history_dir": "results/metrics"
+  },
+  "device": "cpu",
+  "parameter_counts": {
+    "total": 11182668,
+    "trainable": 11182668
+  },
+  "best_validation_macro_f1": 0.05555555555555555,
+  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\resnet18_debug_best.pt",
+  "epochs_completed": 1,
+  "total_training_seconds": 0.6391112999990582,
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 2.5248396396636963,
+        "accuracy": 0.25,
+        "macro_f1": 0.08333333333333333
+      },
+      "validation": {
+        "loss": 2.434617519378662,
+        "accuracy": 0.5,
+        "macro_f1": 0.05555555555555555
+      },
+      "epoch_seconds": 0.49635739997029305
+    }
+  ]
+}
