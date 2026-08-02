@@ -1,6 +1,6 @@
 {
   "config": {
-    "model_name": "resnet18",
+    "model_name": "efficientnet_b0",
     "num_classes": 12,
     "epochs": 1,
     "batch_size": 4,
@@ -17,34 +17,34 @@
     "class_balance_beta": 0.9999,
     "focal_gamma": 2.0,
     "monitor": "validation_macro_f1",
-    "experiment_name": "resnet18_cross_entropy_seed42"
+    "experiment_name": "efficientnet_cli_ce_test"
   },
   "device": "cpu",
   "parameter_counts": {
-    "total": 11182668,
-    "trainable": 11182668
+    "total": 4022920,
+    "trainable": 4022920
   },
   "loss_details": {
     "loss_name": "cross_entropy"
   },
-  "best_validation_macro_f1": 0.05555555555555555,
-  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\resnet18_cross_entropy_seed42_debug_best.pt",
+  "best_validation_macro_f1": 0.0,
+  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\efficientnet_cli_ce_test_debug_best.pt",
   "epochs_completed": 1,
-  "total_training_seconds": 0.7589751000050455,
+  "total_training_seconds": 0.8891751000192016,
   "history": [
     {
       "epoch": 1,
       "train": {
-        "loss": 2.5248396396636963,
-        "accuracy": 0.25,
-        "macro_f1": 0.08333333333333333
+        "loss": 2.3997855186462402,
+        "accuracy": 0.0,
+        "macro_f1": 0.0
       },
       "validation": {
-        "loss": 2.434617519378662,
-        "accuracy": 0.5,
-        "macro_f1": 0.05555555555555555
+        "loss": 2.4980273246765137,
+        "accuracy": 0.0,
+        "macro_f1": 0.0
       },
-      "epoch_seconds": 0.6270942001137882
+      "epoch_seconds": 0.7870489999186248
     }
   ]
 }

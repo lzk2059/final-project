@@ -1,0 +1,81 @@
+{
+  "config": {
+    "model_name": "efficientnet_b0",
+    "num_classes": 12,
+    "epochs": 1,
+    "batch_size": 4,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 8,
+    "pretrained": false,
+    "random_seed": 7,
+    "num_workers": 0,
+    "checkpoint_dir": "checkpoints",
+    "history_dir": "results/metrics",
+    "optimizer_name": "adamw",
+    "loss_name": "class_balanced_focal",
+    "class_balance_beta": 0.9999,
+    "focal_gamma": 2.0,
+    "monitor": "validation_macro_f1",
+    "experiment_name": "efficientnet_b0_cbfocal_seed7"
+  },
+  "device": "cpu",
+  "parameter_counts": {
+    "total": 4022920,
+    "trainable": 4022920
+  },
+  "loss_details": {
+    "loss_name": "class_balanced_focal",
+    "class_balance_beta": 0.9999,
+    "focal_gamma": 2.0,
+    "class_counts": [
+      7000,
+      1313,
+      900,
+      656,
+      1047,
+      122,
+      174,
+      172,
+      575,
+      731,
+      143,
+      1147
+    ],
+    "class_weights": [
+      0.06651762127876282,
+      0.2721397876739502,
+      0.3890550136566162,
+      0.5273752212524414,
+      0.3368583023548126,
+      2.7614848613739014,
+      1.941241979598999,
+      1.9636187553405762,
+      0.5992592573165894,
+      0.4750245213508606,
+      2.358421802520752,
+      0.3090027868747711
+    ],
+    "class_count_source": "data/splits/train.csv"
+  },
+  "best_validation_macro_f1": 0.0,
+  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\efficientnet_b0_cbfocal_seed7_debug_best.pt",
+  "epochs_completed": 1,
+  "total_training_seconds": 0.7406619000248611,
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 1.8765486478805542,
+        "accuracy": 0.25,
+        "macro_f1": 0.05555555555555555
+      },
+      "validation": {
+        "loss": 2.0832083225250244,
+        "accuracy": 0.0,
+        "macro_f1": 0.0
+      },
+      "epoch_seconds": 0.6487422999925911
+    }
+  ]
+}

@@ -19,6 +19,10 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from src.dataset import DataLoaderConfig, create_dataloaders
+from src.losses import (
+    ClassBalancedFocalLoss,
+    load_class_counts,
+)
 from src.model import create_model, get_parameter_counts
 
 
@@ -40,6 +44,8 @@ class TrainingConfig:
     history_dir: str = "results/metrics"
     optimizer_name: str = "adamw"
     loss_name: str = "cross_entropy"
+    class_balance_beta: float = 0.9999
+    focal_gamma: float = 2.0
     monitor: str = "validation_macro_f1"
     experiment_name: str | None = None
 
@@ -58,12 +64,31 @@ class TrainingConfig:
             raise ValueError(
                 "early_stopping_patience must be positive."
             )
+        if isinstance(self.random_seed, bool) or not isinstance(
+            self.random_seed,
+            int,
+        ):
+            raise TypeError("random_seed must be an integer.")
+        if not 0 <= self.random_seed <= 2**32 - 1:
+            raise ValueError(
+                "random_seed must be between 0 and 2**32 - 1."
+            )
         if self.optimizer_name.lower() != "adamw":
             raise ValueError("Only optimizer_name='adamw' is supported.")
-        if self.loss_name.lower() != "cross_entropy":
+        if self.loss_name.lower() not in {
+            "cross_entropy",
+            "class_balanced_focal",
+        }:
             raise ValueError(
-                "Only loss_name='cross_entropy' is currently supported."
+                "loss_name must be 'cross_entropy' or "
+                "'class_balanced_focal'."
             )
+        if not 0.0 <= self.class_balance_beta < 1.0:
+            raise ValueError(
+                "class_balance_beta must be in the interval [0, 1)."
+            )
+        if self.focal_gamma < 0:
+            raise ValueError("focal_gamma cannot be negative.")
         if self.monitor.lower() != "validation_macro_f1":
             raise ValueError(
                 "Only monitor='validation_macro_f1' is supported."
@@ -171,6 +196,7 @@ def save_checkpoint(
     epoch: int,
     validation_macro_f1: float,
     config: TrainingConfig,
+    loss_details: dict[str, object],
 ) -> None:
     """Save enough state to reproduce or resume the best model."""
 
@@ -184,9 +210,46 @@ def save_checkpoint(
             "optimizer_state_dict": optimizer.state_dict(),
             "validation_macro_f1": validation_macro_f1,
             "training_config": asdict(config),
+            "loss_details": loss_details,
         },
         path,
     )
+
+
+def build_loss_function(
+    config: TrainingConfig,
+    project_root: Path,
+    device: torch.device,
+) -> tuple[nn.Module, dict[str, object]]:
+    """Build the configured loss and serializable experiment metadata."""
+
+    normalized_name = config.loss_name.lower()
+    if normalized_name == "cross_entropy":
+        loss_function = nn.CrossEntropyLoss().to(device)
+        return loss_function, {
+            "loss_name": "cross_entropy",
+        }
+
+    training_csv = project_root / "data" / "splits" / "train.csv"
+    class_counts = load_class_counts(
+        csv_path=training_csv,
+        num_classes=config.num_classes,
+    )
+    loss_function = ClassBalancedFocalLoss(
+        class_counts=class_counts,
+        beta=config.class_balance_beta,
+        gamma=config.focal_gamma,
+    ).to(device)
+    return loss_function, {
+        "loss_name": "class_balanced_focal",
+        "class_balance_beta": config.class_balance_beta,
+        "focal_gamma": config.focal_gamma,
+        "class_counts": class_counts.tolist(),
+        "class_weights": (
+            loss_function.class_weights.detach().cpu().tolist()
+        ),
+        "class_count_source": "data/splits/train.csv",
+    }
 
 
 def train_model(
@@ -217,7 +280,11 @@ def train_model(
         num_classes=config.num_classes,
         pretrained=config.pretrained,
     ).to(device)
-    loss_function = nn.CrossEntropyLoss()
+    loss_function, loss_details = build_loss_function(
+        config=config,
+        project_root=root,
+        device=device,
+    )
     optimizer = AdamW(
         model.parameters(),
         lr=config.learning_rate,
@@ -251,6 +318,7 @@ def train_model(
 
     print(f"Device: {device}")
     print(f"Model: {config.model_name}")
+    print(f"Loss: {config.loss_name}")
     print(f"Parameters: {get_parameter_counts(model)}")
 
     for epoch in range(1, config.epochs + 1):
@@ -295,6 +363,7 @@ def train_model(
                 epoch,
                 best_macro_f1,
                 config,
+                loss_details,
             )
         else:
             epochs_without_improvement += 1
@@ -320,6 +389,7 @@ def train_model(
         "config": asdict(config),
         "device": str(device),
         "parameter_counts": get_parameter_counts(model),
+        "loss_details": loss_details,
         "best_validation_macro_f1": best_macro_f1,
         "best_checkpoint": str(checkpoint_path),
         "epochs_completed": len(history),
@@ -359,6 +429,27 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--weight-decay", type=float, default=None)
     parser.add_argument("--patience", type=int, default=None)
     parser.add_argument("--num-workers", type=int, default=None)
+    parser.add_argument("--random-seed", type=int, default=None)
+    parser.add_argument(
+        "--loss",
+        choices=("cross_entropy", "class_balanced_focal"),
+        default=None,
+    )
+    parser.add_argument(
+        "--class-balance-beta",
+        type=float,
+        default=None,
+    )
+    parser.add_argument(
+        "--focal-gamma",
+        type=float,
+        default=None,
+    )
+    parser.add_argument(
+        "--experiment-name",
+        type=str,
+        default=None,
+    )
     parser.add_argument(
         "--no-pretrained",
         action="store_true",
@@ -417,6 +508,11 @@ def load_training_config(arguments: argparse.Namespace) -> TrainingConfig:
         "weight_decay": arguments.weight_decay,
         "early_stopping_patience": arguments.patience,
         "num_workers": arguments.num_workers,
+        "random_seed": arguments.random_seed,
+        "loss_name": arguments.loss,
+        "class_balance_beta": arguments.class_balance_beta,
+        "focal_gamma": arguments.focal_gamma,
+        "experiment_name": arguments.experiment_name,
     }
     for name, value in command_line_overrides.items():
         if value is not None:
