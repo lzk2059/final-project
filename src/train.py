@@ -420,7 +420,11 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        choices=("resnet18", "efficientnet_b0"),
+        choices=(
+            "resnet18",
+            "efficientnet_b0",
+            "efficientnet_b0_multiscale",
+        ),
         default=None,
     )
     parser.add_argument("--epochs", type=int, default=None)

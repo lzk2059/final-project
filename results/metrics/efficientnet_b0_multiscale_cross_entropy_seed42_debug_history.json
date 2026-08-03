@@ -1,0 +1,50 @@
+{
+  "config": {
+    "model_name": "efficientnet_b0_multiscale",
+    "num_classes": 12,
+    "epochs": 1,
+    "batch_size": 4,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "early_stopping_patience": 8,
+    "pretrained": false,
+    "random_seed": 42,
+    "num_workers": 0,
+    "checkpoint_dir": "checkpoints",
+    "history_dir": "results/metrics",
+    "optimizer_name": "adamw",
+    "loss_name": "cross_entropy",
+    "class_balance_beta": 0.9999,
+    "focal_gamma": 2.0,
+    "monitor": "validation_macro_f1",
+    "experiment_name": "efficientnet_b0_multiscale_cross_entropy_seed42"
+  },
+  "device": "cpu",
+  "parameter_counts": {
+    "total": 4196232,
+    "trainable": 4196232
+  },
+  "loss_details": {
+    "loss_name": "cross_entropy"
+  },
+  "best_validation_macro_f1": 0.0,
+  "best_checkpoint": "E:\\桌面\\final project\\checkpoints\\efficientnet_b0_multiscale_cross_entropy_seed42_debug_best.pt",
+  "epochs_completed": 1,
+  "total_training_seconds": 0.9681130000390112,
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "loss": 2.4773221015930176,
+        "accuracy": 0.0,
+        "macro_f1": 0.0
+      },
+      "validation": {
+        "loss": 2.4933671951293945,
+        "accuracy": 0.0,
+        "macro_f1": 0.0
+      },
+      "epoch_seconds": 0.8724722999613732
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Complete improved EfficientNet-B0 experiment
+model_name: efficientnet_b0_multiscale
+experiment_name: efficientnet_b0_multiscale_cbfocal_seed42
+num_classes: 12
+pretrained: true
+epochs: 60
+batch_size: 32
+learning_rate: 0.0001
+weight_decay: 0.0001
+early_stopping_patience: 8
+random_seed: 42
+num_workers: 0
+optimizer_name: adamw
+loss_name: class_balanced_focal
+class_balance_beta: 0.9999
+focal_gamma: 2.0
+monitor: validation_macro_f1
+checkpoint_dir: checkpoints
+history_dir: results/metrics
