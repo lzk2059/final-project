@@ -1,0 +1,105 @@
+{
+  "feature_schema_version": 1,
+  "source_split": "val.csv",
+  "debug_extraction": false,
+  "max_samples": null,
+  "number_of_samples": 2996,
+  "number_of_metadata_columns": 4,
+  "number_of_features": 31,
+  "metadata_columns": [
+    "image_id",
+    "image_path",
+    "class_index",
+    "class_label"
+  ],
+  "feature_columns": [
+    "intensity_mean",
+    "intensity_std",
+    "intensity_min",
+    "intensity_max",
+    "intensity_median",
+    "intensity_q25",
+    "intensity_q75",
+    "intensity_skewness",
+    "intensity_kurtosis",
+    "lbp_bin_00",
+    "lbp_bin_01",
+    "lbp_bin_02",
+    "lbp_bin_03",
+    "lbp_bin_04",
+    "lbp_bin_05",
+    "lbp_bin_06",
+    "lbp_bin_07",
+    "lbp_bin_08",
+    "lbp_bin_09",
+    "glcm_contrast_mean",
+    "glcm_contrast_std",
+    "glcm_dissimilarity_mean",
+    "glcm_dissimilarity_std",
+    "glcm_homogeneity_mean",
+    "glcm_homogeneity_std",
+    "glcm_energy_mean",
+    "glcm_energy_std",
+    "glcm_correlation_mean",
+    "glcm_correlation_std",
+    "glcm_asm_mean",
+    "glcm_asm_std"
+  ],
+  "class_counts": {
+    "0": 1500,
+    "1": 281,
+    "2": 193,
+    "3": 141,
+    "4": 224,
+    "5": 26,
+    "6": 37,
+    "7": 37,
+    "8": 123,
+    "9": 157,
+    "10": 31,
+    "11": 246
+  },
+  "image_source": "original_grayscale_no_resize",
+  "intensity_features": [
+    "intensity_mean",
+    "intensity_std",
+    "intensity_min",
+    "intensity_max",
+    "intensity_median",
+    "intensity_q25",
+    "intensity_q75",
+    "intensity_skewness",
+    "intensity_kurtosis"
+  ],
+  "lbp": {
+    "radius": 1,
+    "points": 8,
+    "method": "uniform",
+    "bins": 10,
+    "histogram_normalized": true
+  },
+  "glcm": {
+    "levels": 16,
+    "distances": [
+      1,
+      2
+    ],
+    "angles_degrees": [
+      0.0,
+      45.0,
+      90.0,
+      135.0
+    ],
+    "symmetric": true,
+    "normalized": true,
+    "properties": [
+      "contrast",
+      "dissimilarity",
+      "homogeneity",
+      "energy",
+      "correlation",
+      "ASM"
+    ]
+  },
+  "feature_validation_performed": true
+}

@@ -5,3 +5,4 @@ pandas
 Pillow
 PyYAML
 scikit-learn
+scikit-image
