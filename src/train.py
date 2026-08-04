@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import random
 import re
@@ -13,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import yaml
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
 from torch import nn
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -137,6 +138,14 @@ def run_epoch(
     total_samples = 0
     all_targets: list[int] = []
     all_predictions: list[int] = []
+    available_batches = len(dataloader)
+    total_batches = (
+        min(available_batches, max_batches)
+        if max_batches is not None
+        else available_batches
+    )
+    phase = "train" if training else "validation"
+    progress_interval = max(1, total_batches // 10)
 
     for batch_index, (images, targets) in enumerate(dataloader):
         if max_batches is not None and batch_index >= max_batches:
@@ -144,12 +153,22 @@ def run_epoch(
 
         images = images.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+        if not torch.isfinite(images).all():
+            raise FloatingPointError(
+                f"Non-finite image values detected in {phase} batch "
+                f"{batch_index + 1}."
+            )
 
         if training:
             optimizer.zero_grad(set_to_none=True)
 
         with torch.set_grad_enabled(training):
             logits = model(images)
+            if not torch.isfinite(logits).all():
+                raise FloatingPointError(
+                    f"Non-finite logits detected in {phase} batch "
+                    f"{batch_index + 1}."
+                )
             if logits.ndim != 2 or logits.shape[1] != num_classes:
                 raise ValueError(
                     "Expected model output "
@@ -157,9 +176,25 @@ def run_epoch(
                     f"{tuple(logits.shape)}."
                 )
             loss = loss_function(logits, targets)
+            if not torch.isfinite(loss):
+                raise FloatingPointError(
+                    f"Non-finite loss detected in {phase} batch "
+                    f"{batch_index + 1}."
+                )
 
             if training:
                 loss.backward()
+                try:
+                    nn.utils.clip_grad_norm_(
+                        model.parameters(),
+                        max_norm=float("inf"),
+                        error_if_nonfinite=True,
+                    )
+                except RuntimeError as error:
+                    raise FloatingPointError(
+                        "Non-finite gradients detected in training batch "
+                        f"{batch_index + 1}."
+                    ) from error
                 optimizer.step()
 
         batch_size = targets.size(0)
@@ -169,6 +204,15 @@ def run_epoch(
         all_predictions.extend(
             logits.argmax(dim=1).detach().cpu().tolist()
         )
+        completed_batches = batch_index + 1
+        if (
+            completed_batches == total_batches
+            or completed_batches % progress_interval == 0
+        ):
+            print(
+                f"  {phase}: {completed_batches}/{total_batches} batches",
+                flush=True,
+            )
 
     if total_samples == 0:
         raise RuntimeError("The data loader produced no samples.")
@@ -186,7 +230,40 @@ def run_epoch(
             labels=list(range(num_classes)),
             zero_division=0,
         ),
+        "balanced_accuracy": balanced_accuracy_score(
+            all_targets,
+            all_predictions,
+        ),
     }
+
+
+def save_history_artifacts(
+    result: dict[str, object],
+    json_path: Path,
+    csv_path: Path,
+) -> None:
+    """Persist the current history in machine- and spreadsheet-readable forms."""
+
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(
+        json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    rows = []
+    for record in result["history"]:
+        row = {"epoch": record["epoch"]}
+        for split in ("train", "validation"):
+            row.update(
+                {f"{split}_{key}": value for key, value in record[split].items()}
+            )
+        row.update(
+            learning_rate=record["learning_rate"],
+            epoch_seconds=record["epoch_seconds"],
+        )
+        rows.append(row)
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def save_checkpoint(
@@ -194,7 +271,10 @@ def save_checkpoint(
     model: nn.Module,
     optimizer: AdamW,
     epoch: int,
-    validation_macro_f1: float,
+    best_validation_macro_f1: float,
+    best_epoch: int,
+    epochs_without_improvement: int,
+    history: list[dict[str, object]],
     config: TrainingConfig,
     loss_details: dict[str, object],
 ) -> None:
@@ -208,7 +288,11 @@ def save_checkpoint(
             "num_classes": config.num_classes,
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
-            "validation_macro_f1": validation_macro_f1,
+            "validation_macro_f1": best_validation_macro_f1,
+            "best_validation_macro_f1": best_validation_macro_f1,
+            "best_epoch": best_epoch,
+            "epochs_without_improvement": epochs_without_improvement,
+            "history": history,
             "training_config": asdict(config),
             "loss_details": loss_details,
         },
@@ -257,6 +341,7 @@ def train_model(
     project_root: str | Path | None = None,
     max_train_batches: int | None = None,
     max_validation_batches: int | None = None,
+    resume_path: str | Path | None = None,
 ) -> dict[str, object]:
     """Train one model and retain the checkpoint with best validation Macro-F1."""
 
@@ -307,13 +392,65 @@ def train_model(
     checkpoint_path = (
         root / config.checkpoint_dir / f"{experiment_name}_best.pt"
     )
+    last_checkpoint_path = (
+        root / config.checkpoint_dir / f"{experiment_name}_last.pt"
+    )
     history_path = (
         root / config.history_dir / f"{experiment_name}_history.json"
     )
-
+    history_csv_path = (
+        root / config.history_dir / f"{experiment_name}_history.csv"
+    )
     history: list[dict[str, object]] = []
     best_macro_f1 = -1.0
+    best_epoch = 0
     epochs_without_improvement = 0
+    start_epoch = 1
+    previous_training_seconds = 0.0
+
+    if resume_path is not None:
+        resolved_resume_path = Path(resume_path).expanduser().resolve()
+        if not resolved_resume_path.is_file():
+            raise FileNotFoundError(
+                f"Resume checkpoint was not found: {resolved_resume_path}"
+            )
+        checkpoint = torch.load(
+            resolved_resume_path,
+            map_location=device,
+            weights_only=False,
+        )
+        if checkpoint.get("model_name") != config.model_name:
+            raise ValueError(
+                "Resume checkpoint model does not match the configuration."
+            )
+        if checkpoint.get("num_classes") != config.num_classes:
+            raise ValueError(
+                "Resume checkpoint class count does not match the configuration."
+            )
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        history = list(checkpoint.get("history", []))
+        best_macro_f1 = float(
+            checkpoint.get(
+                "best_validation_macro_f1",
+                checkpoint.get("validation_macro_f1", -1.0),
+            )
+        )
+        best_epoch = int(checkpoint.get("best_epoch", 0))
+        epochs_without_improvement = int(
+            checkpoint.get("epochs_without_improvement", 0)
+        )
+        start_epoch = int(checkpoint["epoch"]) + 1
+        previous_training_seconds = sum(
+            float(record.get("epoch_seconds", 0.0)) for record in history
+        )
+        print(f"Resuming from: {resolved_resume_path}")
+
+    if start_epoch > config.epochs:
+        raise ValueError(
+            f"Checkpoint already completed epoch {start_epoch - 1}, which "
+            f"is not below the requested {config.epochs} epochs."
+        )
     training_start = time.perf_counter()
 
     print(f"Device: {device}")
@@ -321,7 +458,7 @@ def train_model(
     print(f"Loss: {config.loss_name}")
     print(f"Parameters: {get_parameter_counts(model)}")
 
-    for epoch in range(1, config.epochs + 1):
+    for epoch in range(start_epoch, config.epochs + 1):
         epoch_start = time.perf_counter()
         train_metrics = run_epoch(
             model=model,
@@ -347,6 +484,7 @@ def train_model(
             "epoch": epoch,
             "train": train_metrics,
             "validation": validation_metrics,
+            "learning_rate": optimizer.param_groups[0]["lr"],
             "epoch_seconds": epoch_seconds,
         }
         history.append(epoch_record)
@@ -355,6 +493,7 @@ def train_model(
         improved = current_macro_f1 > best_macro_f1
         if improved:
             best_macro_f1 = current_macro_f1
+            best_epoch = epoch
             epochs_without_improvement = 0
             save_checkpoint(
                 checkpoint_path,
@@ -362,12 +501,51 @@ def train_model(
                 optimizer,
                 epoch,
                 best_macro_f1,
+                best_epoch,
+                epochs_without_improvement,
+                history,
                 config,
                 loss_details,
             )
         else:
             epochs_without_improvement += 1
 
+        save_checkpoint(
+            last_checkpoint_path,
+            model,
+            optimizer,
+            epoch,
+            best_macro_f1,
+            best_epoch,
+            epochs_without_improvement,
+            history,
+            config,
+            loss_details,
+        )
+
+        elapsed_seconds = (
+            previous_training_seconds
+            + time.perf_counter()
+            - training_start
+        )
+        current_result: dict[str, object] = {
+            "config": asdict(config),
+            "device": str(device),
+            "parameter_counts": get_parameter_counts(model),
+            "loss_details": loss_details,
+            "best_validation_macro_f1": best_macro_f1,
+            "best_epoch": best_epoch,
+            "best_checkpoint": str(checkpoint_path),
+            "last_checkpoint": str(last_checkpoint_path),
+            "epochs_completed": len(history),
+            "total_training_seconds": elapsed_seconds,
+            "history": history,
+        }
+        save_history_artifacts(
+            current_result,
+            history_path,
+            history_csv_path,
+        )
         print(
             f"Epoch {epoch:02d}/{config.epochs} | "
             f"train loss={train_metrics['loss']:.4f}, "
@@ -384,25 +562,31 @@ def train_model(
             )
             break
 
-    total_seconds = time.perf_counter() - training_start
+    total_seconds = (
+        previous_training_seconds + time.perf_counter() - training_start
+    )
     result: dict[str, object] = {
         "config": asdict(config),
         "device": str(device),
         "parameter_counts": get_parameter_counts(model),
         "loss_details": loss_details,
         "best_validation_macro_f1": best_macro_f1,
+        "best_epoch": best_epoch,
         "best_checkpoint": str(checkpoint_path),
+        "last_checkpoint": str(last_checkpoint_path),
         "epochs_completed": len(history),
         "total_training_seconds": total_seconds,
         "history": history,
     }
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    history_path.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+    save_history_artifacts(
+        result,
+        history_path,
+        history_csv_path,
     )
     print(f"Best checkpoint: {checkpoint_path}")
+    print(f"Last checkpoint: {last_checkpoint_path}")
     print(f"Training history: {history_path}")
+    print(f"Training history CSV: {history_csv_path}")
     return result
 
 
@@ -472,6 +656,12 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         help="Debug only: limit validation batches per epoch.",
     )
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help="Resume from a compatible last checkpoint.",
+    )
     return parser.parse_args()
 
 
@@ -536,6 +726,7 @@ def main() -> None:
         config,
         max_train_batches=arguments.max_train_batches,
         max_validation_batches=arguments.max_validation_batches,
+        resume_path=arguments.resume,
     )
 
 
