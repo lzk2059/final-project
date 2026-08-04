@@ -71,8 +71,10 @@ def random_forest_status(root: Path, experiment: str) -> str:
     return "conflicting" if model.exists() or metrics.exists() else "new"
 
 
-def deep_command(config: str, experiment: str, seed: int) -> list[str]:
-    return [
+def deep_command(
+    config: str, experiment: str, seed: int, debug: bool
+) -> list[str]:
+    command = [
         sys.executable,
         "-m",
         "src.train",
@@ -83,6 +85,93 @@ def deep_command(config: str, experiment: str, seed: int) -> list[str]:
         "--experiment-name",
         experiment,
     ]
+    if debug:
+        command += [
+            "--epochs", "1", "--batch-size", "4", "--no-pretrained",
+            "--max-train-batches", "1", "--max-validation-batches", "1",
+        ]
+    return command
+
+
+def evaluation_complete(root: Path, experiment: str, deep: bool) -> bool:
+    """Check that metrics, predictions, and expected figures all exist."""
+
+    evaluation_dir = root / "results" / "evaluation"
+    figure_dir = root / "results" / "figures"
+    evaluation_name = experiment + (
+        "_validation_debug" if experiment.endswith("_debug") else "_validation"
+    )
+    paths = [
+        evaluation_dir / f"{evaluation_name}_metrics.json",
+        evaluation_dir / f"{evaluation_name}_predictions.csv",
+        figure_dir / f"{evaluation_name}_confusion_matrix.png",
+        figure_dir / f"{evaluation_name}_confusion_matrix_normalized.png",
+        figure_dir / f"{evaluation_name}_per_class_metrics.png",
+    ]
+    if deep:
+        paths += [
+            figure_dir / f"{experiment}_{metric}.png"
+            for metric in ("loss", "accuracy", "macro_f1", "learning_rate")
+        ]
+    return all(path.is_file() for path in paths)
+
+
+def run_evaluations(
+    root: Path,
+    random_seed: int,
+    include_random_forest: bool,
+    dry_run: bool,
+    debug: bool,
+) -> None:
+    """Evaluate every best model on validation and generate all figures."""
+
+    models = [
+        (
+            f"{name}_seed{random_seed}" + ("_debug" if debug else ""),
+            root / "checkpoints" / (
+                f"{name}_seed{random_seed}"
+                f"{'_debug' if debug else ''}_best.pt"
+            ),
+            True,
+        )
+        for _, name in DEEP_EXPERIMENTS
+    ]
+    if include_random_forest:
+        experiment = f"random_forest_balanced_seed{random_seed}"
+        if debug:
+            experiment += "_debug"
+        models.append(
+            (
+                experiment,
+                root / "checkpoints" / f"{experiment}_best.joblib",
+                False,
+            )
+        )
+
+    print("Validation results and figures", flush=True)
+    for experiment, checkpoint, deep in models:
+        if evaluation_complete(root, experiment, deep):
+            print(f"{experiment}: evaluation completed; skipping.")
+            continue
+        if not dry_run and not checkpoint.is_file():
+            raise FileNotFoundError(f"Best checkpoint is missing: {checkpoint}")
+        command = [
+            sys.executable,
+            "-m",
+            "src.evaluate",
+            "--checkpoint",
+            str(checkpoint),
+            "--split",
+            "validation",
+            "--batch-size",
+            "4" if debug else "32",
+        ]
+        if debug:
+            command += ["--max-samples", "24"]
+        print(f"{experiment}: evaluating", flush=True)
+        print(subprocess.list2cmdline(command), flush=True)
+        if not dry_run:
+            subprocess.run(command, cwd=root, check=True)
 
 
 def run_experiments(
@@ -90,6 +179,8 @@ def run_experiments(
     include_random_forest: bool = True,
     dry_run: bool = False,
     allow_cpu: bool = False,
+    evaluate_results: bool = True,
+    debug: bool = False,
 ) -> None:
     """Run one seed safely, skipping completed work and resuming interruptions."""
 
@@ -99,20 +190,21 @@ def run_experiments(
     missing = [str(path) for path in required_paths(root, include_random_forest) if not path.is_file()]
     if missing:
         raise FileNotFoundError(f"Required files are missing: {missing}")
-    if not (allow_cpu or dry_run or torch.cuda.is_available()):
+    if not (allow_cpu or dry_run or debug or torch.cuda.is_available()):
         raise RuntimeError("CUDA is unavailable. Use --allow-cpu only intentionally.")
 
     total = len(DEEP_EXPERIMENTS) + int(include_random_forest)
     print(f"Seed {random_seed}: {total} experiments")
     for index, (config, base_name) in enumerate(DEEP_EXPERIMENTS, start=1):
         experiment = f"{base_name}_seed{random_seed}"
-        status, resume = deep_status(root, experiment)
-        print(f"[{index}/{total}] {experiment}: {status}", flush=True)
+        output_name = experiment + ("_debug" if debug else "")
+        status, resume = deep_status(root, output_name)
+        print(f"[{index}/{total}] {output_name}: {status}", flush=True)
         if status == "completed":
             continue
         if status == "conflicting":
-            raise RuntimeError(f"Conflicting outputs exist for {experiment}.")
-        command = deep_command(config, experiment, random_seed)
+            raise RuntimeError(f"Conflicting outputs exist for {output_name}.")
+        command = deep_command(config, experiment, random_seed, debug)
         if resume is not None:
             command += ["--resume", str(resume)]
         print(subprocess.list2cmdline(command), flush=True)
@@ -121,10 +213,11 @@ def run_experiments(
 
     if include_random_forest:
         experiment = f"random_forest_balanced_seed{random_seed}"
-        status = random_forest_status(root, experiment)
-        print(f"[{total}/{total}] {experiment}: {status}", flush=True)
+        output_name = experiment + ("_debug" if debug else "")
+        status = random_forest_status(root, output_name)
+        print(f"[{total}/{total}] {output_name}: {status}", flush=True)
         if status == "conflicting":
-            raise RuntimeError(f"Conflicting outputs exist for {experiment}.")
+            raise RuntimeError(f"Conflicting outputs exist for {output_name}.")
         if status != "completed":
             command = [
                 sys.executable,
@@ -137,9 +230,19 @@ def run_experiments(
                 "--experiment-name",
                 experiment,
             ]
+            if debug:
+                command += [
+                    "--n-estimators", "10",
+                    "--max-train-samples", "120",
+                    "--max-validation-samples", "120",
+                ]
             print(subprocess.list2cmdline(command), flush=True)
             if not dry_run:
                 subprocess.run(command, cwd=root, check=True)
+    if evaluate_results:
+        run_evaluations(
+            root, random_seed, include_random_forest, dry_run, debug
+        )
     print("Dry run complete." if dry_run else "All experiments completed.")
 
 
@@ -149,6 +252,12 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--skip-random-forest", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--allow-cpu", action="store_true")
+    parser.add_argument("--skip-evaluation", action="store_true")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Run a tiny end-to-end training, evaluation, and plotting test.",
+    )
     return parser.parse_args()
 
 
@@ -159,6 +268,8 @@ def main() -> None:
         include_random_forest=not arguments.skip_random_forest,
         dry_run=arguments.dry_run,
         allow_cpu=arguments.allow_cpu,
+        evaluate_results=not arguments.skip_evaluation,
+        debug=arguments.debug,
     )
 
 
