@@ -7,3 +7,5 @@ Pillow
 PyYAML
 scikit-learn
 scikit-image
+torch
+torchvision

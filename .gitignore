@@ -11,6 +11,8 @@ __pycache__/
 # Debug results
 results/metrics/*_debug_*.json
 results/metrics/*_debug_*.csv
+results/evaluation/*_debug_*.json
+results/evaluation/*_debug_*.csv
 results/figures/*_debug_*.png
 
 # Generated handcrafted features
