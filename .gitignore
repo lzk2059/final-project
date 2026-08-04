@@ -3,3 +3,14 @@
 checkpoints/
 *.pt
 *.pth
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Debug results
+results/metrics/*_debug_*.json
+
+# Generated handcrafted features
+data/features/
+results/metrics/*_debug_*.json
