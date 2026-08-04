@@ -1,0 +1,13 @@
+# Balanced Random Forest handcrafted-feature baseline
+experiment_name: random_forest_balanced_seed42
+num_classes: 12
+random_seed: 42
+class_weight: balanced
+n_jobs: -1
+n_estimators: [300]
+max_depth: [null, 20]
+min_samples_leaf: [1, 2]
+max_features: [sqrt]
+feature_dir: data/features
+checkpoint_dir: checkpoints
+metrics_dir: results/metrics

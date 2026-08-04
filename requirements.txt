@@ -1,5 +1,6 @@
 # Add project dependencies here.
 matplotlib
+joblib
 numpy
 pandas
 Pillow
