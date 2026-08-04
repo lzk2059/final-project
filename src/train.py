@@ -529,6 +529,7 @@ def train_model(
             - training_start
         )
         current_result: dict[str, object] = {
+            "status": "running",
             "config": asdict(config),
             "device": str(device),
             "parameter_counts": get_parameter_counts(model),
@@ -566,6 +567,10 @@ def train_model(
         previous_training_seconds + time.perf_counter() - training_start
     )
     result: dict[str, object] = {
+        "status": "completed",
+        "stopped_early": (
+            epochs_without_improvement >= config.early_stopping_patience
+        ),
         "config": asdict(config),
         "device": str(device),
         "parameter_counts": get_parameter_counts(model),
