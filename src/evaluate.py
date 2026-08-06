@@ -25,6 +25,7 @@ from sklearn.metrics import (
 
 from src.dataset import DataLoaderConfig, InfraredDataset, create_dataloader
 from src.model import create_model, get_parameter_counts
+from src.compare_results import EXPERIMENTS, compare_results
 
 
 SPLIT_FILES = {"validation": "val", "test": "test"}
@@ -498,19 +499,107 @@ def evaluate(
     return result
 
 
+def completed_evaluation(root: Path, experiment: str, split: str) -> bool:
+    """Return whether a complete non-debug evaluation already exists."""
+
+    directory = root / "results" / "evaluation"
+    metrics_path = directory / f"{experiment}_{split}_metrics.json"
+    predictions_path = directory / f"{experiment}_{split}_predictions.csv"
+    if not metrics_path.is_file() or not predictions_path.is_file():
+        return False
+    try:
+        document = json.loads(metrics_path.read_text(encoding="utf-8"))
+        metrics = document["metrics"]
+        return (
+            document.get("experiment_name") == experiment
+            and document.get("split") == split
+            and document.get("debug_evaluation") is False
+            and int(metrics["number_of_samples"]) > 0
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+
+
+def evaluate_all(
+    split: str,
+    seeds: list[int],
+    batch_size: int = 32,
+    num_workers: int = 0,
+    force: bool = False,
+) -> None:
+    """Evaluate every formal best checkpoint and aggregate the results."""
+
+    if len(seeds) < 2 or len(set(seeds)) != len(seeds):
+        raise ValueError("Provide at least two distinct random seeds.")
+    if any(seed < 0 or seed > 2**32 - 1 for seed in seeds):
+        raise ValueError("Every seed must be between 0 and 2**32 - 1.")
+    root = Path(__file__).resolve().parents[1]
+    jobs: list[tuple[str, Path]] = []
+    for base_name in EXPERIMENTS:
+        extension = ".joblib" if base_name == "random_forest_balanced" else ".pt"
+        for seed in seeds:
+            experiment = f"{base_name}_seed{seed}"
+            checkpoint = root / "checkpoints" / f"{experiment}_best{extension}"
+            if not checkpoint.is_file():
+                raise FileNotFoundError(f"Missing best checkpoint: {checkpoint}")
+            jobs.append((experiment, checkpoint))
+
+    print(f"Evaluating {len(jobs)} best checkpoints on the {split} split.")
+    for index, (experiment, checkpoint) in enumerate(jobs, start=1):
+        if not force and completed_evaluation(root, experiment, split):
+            print(f"[{index}/{len(jobs)}] {experiment}: completed, skipping")
+            continue
+        print(f"[{index}/{len(jobs)}] {experiment}: evaluating", flush=True)
+        evaluate(
+            checkpoint=checkpoint,
+            split=split,
+            project_root=root,
+            batch_size=batch_size,
+            num_workers=num_workers,
+        )
+
+    compare_results(root, split, seeds)
+    print("All evaluations and comparisons completed.")
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate a saved classifier.")
-    parser.add_argument("--checkpoint", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--checkpoint", type=Path)
+    mode.add_argument(
+        "--all",
+        action="store_true",
+        help="Evaluate every formal best checkpoint and compare all seeds.",
+    )
     parser.add_argument("--split", choices=("validation", "test"), default="validation")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--history", type=Path)
+    parser.add_argument("--seeds", type=int, nargs="+", default=[42, 123, 2026])
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-evaluate and overwrite existing complete results in --all mode.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     arguments = parse_arguments()
+    if arguments.all:
+        if arguments.max_samples is not None or arguments.history is not None:
+            raise ValueError("--max-samples and --history are only for single-checkpoint mode.")
+        evaluate_all(
+            split=arguments.split,
+            seeds=arguments.seeds,
+            batch_size=arguments.batch_size,
+            num_workers=arguments.num_workers,
+            force=arguments.force,
+        )
+        return
+    if arguments.force:
+        raise ValueError("--force is only available with --all.")
     evaluate(
         checkpoint=arguments.checkpoint,
         split=arguments.split,
