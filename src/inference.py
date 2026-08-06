@@ -1,1 +1,1 @@
-\"\"\"Inference entry point.\"\"\"
+"""Inference entry point."""
