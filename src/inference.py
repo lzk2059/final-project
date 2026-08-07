@@ -23,6 +23,7 @@ DEFAULT_CHECKPOINT = (
 )
 DEFAULT_INPUT_DIR = ROOT / "data" / "inference_images"
 DEFAULT_OUTPUT_DIR = ROOT / "results" / "inference"
+DEFAULT_RECOMMENDATIONS = ROOT / "configs" / "fault_recommendations.json"
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 CLASS_NAMES = (
     "No-Anomaly",
@@ -38,6 +39,55 @@ CLASS_NAMES = (
     "Soiling",
     "Vegetation",
 )
+
+
+def load_recommendations(path: str | Path = DEFAULT_RECOMMENDATIONS) -> dict:
+    """Load and validate the maintenance-priority rules."""
+
+    config_path = Path(path).expanduser().resolve()
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    threshold = data.get("confidence_threshold")
+    rules = data.get("classes")
+    if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+        raise ValueError("confidence_threshold must be numeric.")
+    if not 0.0 <= float(threshold) <= 1.0:
+        raise ValueError("confidence_threshold must be between 0 and 1.")
+    if not isinstance(rules, dict) or set(rules) != set(CLASS_NAMES):
+        raise ValueError("Recommendation rules must contain exactly the 12 classes.")
+    for name, rule in rules.items():
+        if not isinstance(rule, dict) or not all(
+            isinstance(rule.get(key), str) and rule[key].strip()
+            for key in ("risk_level", "recommended_action")
+        ):
+            raise ValueError(f"Invalid recommendation rule for '{name}'.")
+    if not isinstance(data.get("disclaimer"), str) or not data["disclaimer"].strip():
+        raise ValueError("A non-empty disclaimer is required.")
+    return data
+
+
+def build_maintenance_assessment(
+    predicted_class: str,
+    confidence: float,
+    recommendations: dict,
+) -> dict[str, object]:
+    """Convert one prediction into a conservative maintenance assessment."""
+
+    threshold = float(recommendations["confidence_threshold"])
+    rule = recommendations["classes"][predicted_class]
+    uncertain = confidence < threshold
+    return {
+        "confidence_status": "Review required" if uncertain else "Accepted",
+        "confidence_threshold": threshold,
+        "risk_level": "Uncertain" if uncertain else rule["risk_level"],
+        "recommended_action": (
+            "Prediction confidence is below the configured threshold. Obtain manual "
+            "review before applying the class-specific recommendation: "
+            + rule["recommended_action"]
+            if uncertain
+            else rule["recommended_action"]
+        ),
+        "disclaimer": recommendations["disclaimer"],
+    }
 
 
 def load_class_names(num_classes: int) -> list[str]:
@@ -118,10 +168,12 @@ def prediction_record(
     device: torch.device,
     names: list[str],
     probabilities: torch.Tensor,
+    recommendations: dict,
 ) -> dict[str, object]:
     """Build the saved record later consumed by explain.py."""
 
     predicted = int(probabilities.argmax().item())
+    confidence = float(probabilities[predicted])
     return {
         "status": "success",
         "image": str(image.resolve()),
@@ -131,10 +183,13 @@ def prediction_record(
         "class_names": names,
         "predicted_index": predicted,
         "predicted_class": names[predicted],
-        "confidence": float(probabilities[predicted]),
+        "confidence": confidence,
         "probabilities": {
             name: float(probabilities[index]) for index, name in enumerate(names)
         },
+        "maintenance_assessment": build_maintenance_assessment(
+            names[predicted], confidence, recommendations
+        ),
     }
 
 
@@ -172,6 +227,7 @@ def run_inference(
         raise FileNotFoundError(f"No images found. Place images in: {input_path}")
 
     model, device, names, model_name, checkpoint_path = load_classifier(checkpoint)
+    recommendations = load_recommendations()
     output_path.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, object]] = []
     for index, image in enumerate(images, start=1):
@@ -183,11 +239,14 @@ def run_inference(
                 device,
                 names,
                 predict_probabilities(model, image, device),
+                recommendations,
             )
             record["image"] = portable_path(image)
             record["checkpoint"] = portable_path(checkpoint_path)
+            assessment = record["maintenance_assessment"]
             message = (
-                f"{record['predicted_class']} ({record['confidence']:.4f})"
+                f"{record['predicted_class']} ({record['confidence']:.4f}), "
+                f"risk={assessment['risk_level']}"
             )
         except (OSError, RuntimeError, ValueError) as error:
             record = {
@@ -213,6 +272,9 @@ def run_inference(
                 "image",
                 "predicted_class",
                 "confidence",
+                "confidence_status",
+                "risk_level",
+                "recommended_action",
                 "error",
                 *probability_columns,
             ],
@@ -225,6 +287,15 @@ def run_inference(
                     "image": record["image"],
                     "predicted_class": record.get("predicted_class", ""),
                     "confidence": record.get("confidence", ""),
+                    "confidence_status": record.get(
+                        "maintenance_assessment", {}
+                    ).get("confidence_status", ""),
+                    "risk_level": record.get("maintenance_assessment", {}).get(
+                        "risk_level", ""
+                    ),
+                    "recommended_action": record.get(
+                        "maintenance_assessment", {}
+                    ).get("recommended_action", ""),
                     "error": record.get("error", ""),
                     **{
                         f"probability_{name}": probability

@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "confidence_threshold": 0.6,
+  "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection.",
+  "classes": {
+    "No-Anomaly": {
+      "risk_level": "Low",
+      "recommended_action": "No obvious thermal anomaly was identified. Continue routine monitoring and scheduled inspection."
+    },
+    "Cell": {
+      "risk_level": "Moderate",
+      "recommended_action": "Inspect the affected cell area and compare electrical performance before deciding whether repair or replacement is required."
+    },
+    "Cell-Multi": {
+      "risk_level": "High",
+      "recommended_action": "Arrange a prompt professional inspection of the multiple affected cell areas and verify module and string electrical performance."
+    },
+    "Cracking": {
+      "risk_level": "High",
+      "recommended_action": "Perform visual and electrical inspection. Base any replacement decision on confirmed damage, safety risk, and measured performance loss."
+    },
+    "Diode": {
+      "risk_level": "High",
+      "recommended_action": "Have qualified personnel inspect the bypass diode, wiring, connectors, and associated module or string."
+    },
+    "Diode-Multi": {
+      "risk_level": "High",
+      "recommended_action": "Prioritise professional electrical inspection of the bypass diodes and associated module or string before continued operation."
+    },
+    "Hot-Spot": {
+      "risk_level": "High",
+      "recommended_action": "Arrange prompt thermographic and electrical inspection, checking for shading, soiling, cell damage, mismatch, and connection faults."
+    },
+    "Hot-Spot-Multi": {
+      "risk_level": "High",
+      "recommended_action": "Prioritise professional thermographic and electrical inspection of all highlighted regions and assess whether the module should be isolated."
+    },
+    "Offline-Module": {
+      "risk_level": "High",
+      "recommended_action": "Promptly check module and string operating status, connectors, wiring, inverter input, and monitoring communication."
+    },
+    "Shadowing": {
+      "risk_level": "Moderate",
+      "recommended_action": "Identify whether the shadow is temporary or avoidable, remove the cause where safe, and repeat the inspection under suitable conditions."
+    },
+    "Soiling": {
+      "risk_level": "Moderate",
+      "recommended_action": "Inspect for dust, bird droppings, or debris; clean according to the site procedure and repeat the inspection."
+    },
+    "Vegetation": {
+      "risk_level": "Moderate",
+      "recommended_action": "Inspect for vegetation obstruction, manage it safely according to the site procedure, and repeat the inspection."
+    }
+  }
+}
