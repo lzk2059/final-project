@@ -79,6 +79,33 @@ class PreprocessingConfig:
             )
 
 
+def calculate_resize_with_padding_geometry(
+    source_size: tuple[int, int],
+    output_size: tuple[int, int],
+) -> tuple[int, int, int, int, int, int]:
+    """Return resized width/height and left/top/right/bottom padding."""
+
+    source_width, source_height = source_size
+    output_height, output_width = output_size
+    if min(source_width, source_height, output_width, output_height) <= 0:
+        raise ValueError("Image sizes must contain positive values.")
+    scale = min(output_width / source_width, output_height / source_height)
+    resized_width = max(1, round(source_width * scale))
+    resized_height = max(1, round(source_height * scale))
+    horizontal_padding = output_width - resized_width
+    vertical_padding = output_height - resized_height
+    left = horizontal_padding // 2
+    top = vertical_padding // 2
+    return (
+        resized_width,
+        resized_height,
+        left,
+        top,
+        horizontal_padding - left,
+        vertical_padding - top,
+    )
+
+
 class ResizeWithPadding:
     """Resize a PIL image without distortion and pad it to a fixed size."""
 
@@ -102,24 +129,17 @@ class ResizeWithPadding:
         if source_width <= 0 or source_height <= 0:
             raise ValueError("The input image has an invalid size.")
 
-        scale = min(
-            self.output_width / source_width,
-            self.output_height / source_height,
+        resized_width, resized_height, left, top, right, bottom = (
+            calculate_resize_with_padding_geometry(
+                image.size,
+                (self.output_height, self.output_width),
+            )
         )
-        resized_width = max(1, round(source_width * scale))
-        resized_height = max(1, round(source_height * scale))
 
         resized = image.resize(
             (resized_width, resized_height),
             resample=self.interpolation,
         )
-
-        horizontal_padding = self.output_width - resized_width
-        vertical_padding = self.output_height - resized_height
-        left = horizontal_padding // 2
-        right = horizontal_padding - left
-        top = vertical_padding // 2
-        bottom = vertical_padding - top
 
         # A per-image median gives the padded region a neutral infrared
         # intensity. An explicit integer can still be supplied for controlled
