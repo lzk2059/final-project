@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_8211.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 10,
+  "predicted_class": "Soiling",
+  "confidence": 0.9998537302017212,
+  "probabilities": {
+    "No-Anomaly": 9.113076404609899e-10,
+    "Cell": 2.5835904580162605e-06,
+    "Cell-Multi": 4.1070670704357326e-05,
+    "Cracking": 2.2918207832844928e-05,
+    "Diode": 4.947779643771355e-07,
+    "Diode-Multi": 1.415780270797029e-09,
+    "Hot-Spot": 5.315197615374245e-09,
+    "Hot-Spot-Multi": 2.5391486815351527e-06,
+    "Offline-Module": 1.5195816160940012e-07,
+    "Shadowing": 7.081049989210442e-05,
+    "Soiling": 0.9998537302017212,
+    "Vegetation": 5.77185210204334e-06
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Accepted",
+    "confidence_threshold": 0.6,
+    "risk_level": "Moderate",
+    "recommended_action": "Inspect for dust, bird droppings, or debris; clean according to the site procedure and repeat the inspection.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}

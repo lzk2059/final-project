@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_7414.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 3,
+  "predicted_class": "Cracking",
+  "confidence": 0.9999676942825317,
+  "probabilities": {
+    "No-Anomaly": 1.2252728993189521e-05,
+    "Cell": 4.5384780378299183e-07,
+    "Cell-Multi": 5.331230113370111e-06,
+    "Cracking": 0.9999676942825317,
+    "Diode": 3.718896124382809e-08,
+    "Diode-Multi": 2.510143701783818e-07,
+    "Hot-Spot": 1.1141408684522958e-08,
+    "Hot-Spot-Multi": 3.13457633183134e-08,
+    "Offline-Module": 1.7510930661046586e-07,
+    "Shadowing": 6.298016330674727e-08,
+    "Soiling": 2.4042710720095783e-06,
+    "Vegetation": 1.149837135017151e-05
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Accepted",
+    "confidence_threshold": 0.6,
+    "risk_level": "High",
+    "recommended_action": "Perform visual and electrical inspection. Base any replacement decision on confirmed damage, safety risk, and measured performance loss.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}

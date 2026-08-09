@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_6961.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 6,
+  "predicted_class": "Hot-Spot",
+  "confidence": 0.9998801946640015,
+  "probabilities": {
+    "No-Anomaly": 1.3469216355588287e-05,
+    "Cell": 8.50350443215575e-06,
+    "Cell-Multi": 1.5809517890374991e-06,
+    "Cracking": 8.123355996758619e-07,
+    "Diode": 2.253767206639168e-06,
+    "Diode-Multi": 1.244132761257788e-07,
+    "Hot-Spot": 0.9998801946640015,
+    "Hot-Spot-Multi": 9.10303060663864e-05,
+    "Offline-Module": 4.995084736947319e-07,
+    "Shadowing": 2.2541787814134295e-07,
+    "Soiling": 1.3400509715211228e-06,
+    "Vegetation": 8.113599569981034e-09
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Accepted",
+    "confidence_threshold": 0.6,
+    "risk_level": "High",
+    "recommended_action": "Arrange prompt thermographic and electrical inspection, checking for shading, soiling, cell damage, mismatch, and connection faults.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}

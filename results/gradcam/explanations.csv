@@ -1,0 +1,6 @@
+status,prediction,image,predicted_class,confidence,target_layer,overlay,case_report,error
+success,validation_17047_jpg_prediction.json,data/inference_images/validation_17047.jpg,No-Anomaly,1.0,features[-1],results/gradcam/validation_17047_jpg_gradcam_overlay.png,results/gradcam/validation_17047_jpg_case_report.png,
+success,validation_6961_jpg_prediction.json,data/inference_images/validation_6961.jpg,Hot-Spot,0.9998801946640015,features[-1],results/gradcam/validation_6961_jpg_gradcam_overlay.png,results/gradcam/validation_6961_jpg_case_report.png,
+success,validation_7414_jpg_prediction.json,data/inference_images/validation_7414.jpg,Cracking,0.9999676942825317,features[-1],results/gradcam/validation_7414_jpg_gradcam_overlay.png,results/gradcam/validation_7414_jpg_case_report.png,
+success,validation_8211_jpg_prediction.json,data/inference_images/validation_8211.jpg,Soiling,0.9998537302017212,features[-1],results/gradcam/validation_8211_jpg_gradcam_overlay.png,results/gradcam/validation_8211_jpg_case_report.png,
+success,validation_9054_jpg_prediction.json,data/inference_images/validation_9054.jpg,Vegetation,0.9999969005584717,features[-1],results/gradcam/validation_9054_jpg_gradcam_overlay.png,results/gradcam/validation_9054_jpg_case_report.png,

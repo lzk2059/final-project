@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import textwrap
 from pathlib import Path
 
 import matplotlib
@@ -131,6 +132,45 @@ def save_overlay(
     plt.close(figure)
 
 
+def save_case_report(
+    image_path: Path,
+    overlay_path: Path,
+    output_path: Path,
+    prediction: dict[str, object],
+) -> None:
+    """Save one readable prediction, maintenance, and Grad-CAM report."""
+
+    assessment = prediction.get("maintenance_assessment")
+    if not isinstance(assessment, dict):
+        raise ValueError("Prediction does not contain a maintenance assessment.")
+    with Image.open(image_path) as source, Image.open(overlay_path) as overlay:
+        original = np.asarray(source.convert("L").copy())
+        gradcam = np.asarray(overlay.convert("RGB").copy())
+
+    figure, axes = plt.subplots(1, 2, figsize=(12, 7))
+    axes[0].imshow(original, cmap="gray", interpolation="nearest")
+    axes[0].set_title("Original infrared image")
+    axes[1].imshow(gradcam)
+    axes[1].set_title("Grad-CAM heatmap")
+    for axis in axes:
+        axis.axis("off")
+
+    recommendation = textwrap.fill(
+        str(assessment["recommended_action"]), width=105
+    )
+    details = (
+        f"Predicted class: {prediction['predicted_class']}\n"
+        f"Confidence: {float(prediction['confidence']):.2%}\n"
+        f"Risk level: {assessment['risk_level']}\n"
+        f"Maintenance recommendation: {recommendation}"
+    )
+    figure.text(0.05, 0.04, details, ha="left", va="bottom", fontsize=11)
+    figure.subplots_adjust(left=0.04, right=0.98, top=0.91, bottom=0.28, wspace=0.08)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(figure)
+
+
 def explain_prediction(
     prediction_path: Path,
     output_dir: Path,
@@ -164,6 +204,10 @@ def explain_prediction(
         str(prediction["predicted_class"]),
         float(prediction["confidence"]),
     )
+    report_path = output_dir / prediction_path.name.replace(
+        "_prediction.json", "_case_report.png"
+    )
+    save_case_report(image_path, output_path, report_path, prediction)
     return {
         "status": "success",
         "prediction": prediction_path.name,
@@ -172,6 +216,7 @@ def explain_prediction(
         "confidence": prediction["confidence"],
         "target_layer": layer_name,
         "overlay": portable_path(output_path),
+        "case_report": portable_path(report_path),
         "error": "",
     }
 
@@ -202,6 +247,7 @@ def run_explanations(
                 "confidence": "",
                 "target_layer": "",
                 "overlay": "",
+                "case_report": "",
                 "error": f"{type(error).__name__}: {error}",
             }
             message = str(record["error"])
@@ -216,6 +262,7 @@ def run_explanations(
         "confidence",
         "target_layer",
         "overlay",
+        "case_report",
         "error",
     ]
     with (output_path / "explanations.csv").open("w", newline="", encoding="utf-8") as file:

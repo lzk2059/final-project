@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_9054.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 11,
+  "predicted_class": "Vegetation",
+  "confidence": 0.9999969005584717,
+  "probabilities": {
+    "No-Anomaly": 2.6363758820480143e-07,
+    "Cell": 1.128372900893737e-06,
+    "Cell-Multi": 4.0268920997732494e-07,
+    "Cracking": 1.2005306189166731e-06,
+    "Diode": 2.7852700701380684e-10,
+    "Diode-Multi": 1.8078740726679143e-09,
+    "Hot-Spot": 3.0497212394342554e-11,
+    "Hot-Spot-Multi": 3.330241638010989e-09,
+    "Offline-Module": 1.2169209639978362e-08,
+    "Shadowing": 3.830395112203178e-09,
+    "Soiling": 3.3426143630777005e-08,
+    "Vegetation": 0.9999969005584717
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Accepted",
+    "confidence_threshold": 0.6,
+    "risk_level": "Moderate",
+    "recommended_action": "Inspect for vegetation obstruction, manage it safely according to the site procedure, and repeat the inspection.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}
