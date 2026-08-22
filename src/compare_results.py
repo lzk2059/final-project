@@ -203,7 +203,7 @@ def plot_improved_per_class_f1(per_class: pd.DataFrame, path: Path) -> None:
     axis.set_title("Improved EfficientNet Per-Class Test F1 (Mean ± SD)")
     axis.set_ylim(0, 1.0)
     axis.grid(axis="y", alpha=0.25)
-    axis.bar_label(bars, labels=[f"{value:.3f}" for value in means], padding=3)
+    axis.bar_label(bars, labels=[f"{value:.4f}" for value in means], padding=3)
     figure.tight_layout()
     figure.savefig(path, dpi=300)
     plt.close(figure)
