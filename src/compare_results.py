@@ -35,6 +35,11 @@ ABLATION_MODELS = (
     "Improved EfficientNet",
 )
 METRICS = ("accuracy", "macro_f1", "balanced_accuracy")
+CLASS_NAMES = (
+    "No-Anomaly", "Cell", "Cell-Multi", "Cracking", "Diode", "Diode-Multi",
+    "Hot-Spot", "Hot-Spot-Multi", "Offline-Module", "Shadowing", "Soiling",
+    "Vegetation",
+)
 
 
 def read_json(path: Path) -> dict[str, object]:
@@ -178,6 +183,32 @@ def plot_metric(frame: pd.DataFrame, metric: str, title: str, path: Path) -> Non
     plt.close(figure)
 
 
+def plot_improved_per_class_f1(per_class: pd.DataFrame, path: Path) -> None:
+    """Plot mean per-class F1 with standard deviation across random seeds."""
+
+    frame = per_class[per_class["model"] == "Improved EfficientNet"].set_index(
+        "class_name"
+    )
+    missing = [name for name in CLASS_NAMES if name not in frame.index]
+    if missing:
+        raise ValueError(f"Missing Improved EfficientNet classes: {missing}")
+    frame = frame.loc[list(CLASS_NAMES)]
+    means = frame["f1_mean"].to_numpy(dtype=float)
+    errors = frame["f1_std"].to_numpy(dtype=float)
+    positions = np.arange(len(frame))
+    figure, axis = plt.subplots(figsize=(12, 6))
+    bars = axis.bar(positions, means, yerr=errors, capsize=4, color="#4472C4")
+    axis.set_xticks(positions, CLASS_NAMES, rotation=35, ha="right")
+    axis.set_ylabel("F1-score")
+    axis.set_title("Improved EfficientNet Per-Class Test F1 (Mean ± SD)")
+    axis.set_ylim(0, 1.0)
+    axis.grid(axis="y", alpha=0.25)
+    axis.bar_label(bars, labels=[f"{value:.3f}" for value in means], padding=3)
+    figure.tight_layout()
+    figure.savefig(path, dpi=300)
+    plt.close(figure)
+
+
 def compare_results(root: Path, split: str, seeds: list[int]) -> None:
     """Create reproducible tables and figures from completed evaluations."""
 
@@ -223,6 +254,12 @@ def compare_results(root: Path, split: str, seeds: list[int]) -> None:
             metric,
             f"EfficientNet Ablation ({split.title()})",
             figure_dir / f"comparison_{split}_ablation_{metric}.png",
+        )
+
+    if split == "test":
+        plot_improved_per_class_f1(
+            per_class,
+            figure_dir / "improved_efficientnet_test_per_class_f1_mean_std.png",
         )
 
     winner = summary.loc[summary["macro_f1_mean"].idxmax()]
