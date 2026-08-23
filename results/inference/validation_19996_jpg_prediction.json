@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_19996.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 0,
+  "predicted_class": "No-Anomaly",
+  "confidence": 0.5998064279556274,
+  "probabilities": {
+    "No-Anomaly": 0.5998064279556274,
+    "Cell": 0.0039549958892166615,
+    "Cell-Multi": 0.0017140205018222332,
+    "Cracking": 0.00025266208103857934,
+    "Diode": 0.0003336704976391047,
+    "Diode-Multi": 4.412684211274609e-05,
+    "Hot-Spot": 8.284102659672499e-05,
+    "Hot-Spot-Multi": 0.00013261361164040864,
+    "Offline-Module": 0.0018714318284764886,
+    "Shadowing": 0.025465505197644234,
+    "Soiling": 0.00016412117111030966,
+    "Vegetation": 0.36617758870124817
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Review required",
+    "confidence_threshold": 0.6,
+    "risk_level": "Uncertain",
+    "recommended_action": "Prediction confidence is below the configured threshold. Obtain manual review before applying the class-specific recommendation: No obvious thermal anomaly was identified. Continue routine monitoring and scheduled inspection.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}

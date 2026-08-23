@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "image": "data/inference_images/validation_8329.jpg",
+  "checkpoint": "checkpoints/efficientnet_b0_multiscale_cross_entropy_seed42_best.pt",
+  "device": "cpu",
+  "model_name": "efficientnet_b0_multiscale",
+  "class_names": [
+    "No-Anomaly",
+    "Cell",
+    "Cell-Multi",
+    "Cracking",
+    "Diode",
+    "Diode-Multi",
+    "Hot-Spot",
+    "Hot-Spot-Multi",
+    "Offline-Module",
+    "Shadowing",
+    "Soiling",
+    "Vegetation"
+  ],
+  "predicted_index": 2,
+  "predicted_class": "Cell-Multi",
+  "confidence": 0.5921120047569275,
+  "probabilities": {
+    "No-Anomaly": 0.0007425338262692094,
+    "Cell": 0.0037507466040551662,
+    "Cell-Multi": 0.5921120047569275,
+    "Cracking": 0.004889496136456728,
+    "Diode": 0.0010813616681843996,
+    "Diode-Multi": 6.39562276774086e-05,
+    "Hot-Spot": 0.00012581358896568418,
+    "Hot-Spot-Multi": 0.002870243275538087,
+    "Offline-Module": 0.0005599529831670225,
+    "Shadowing": 0.0013243909925222397,
+    "Soiling": 0.38952353596687317,
+    "Vegetation": 0.0029559035319834948
+  },
+  "maintenance_assessment": {
+    "confidence_status": "Review required",
+    "confidence_threshold": 0.6,
+    "risk_level": "Uncertain",
+    "recommended_action": "Prediction confidence is below the configured threshold. Obtain manual review before applying the class-specific recommendation: Arrange a prompt professional inspection of the multiple affected cell areas and verify module and string electrical performance.",
+    "disclaimer": "This is a maintenance-priority aid based on image classification, not a remaining-useful-life or replacement decision. Confirm abnormal findings through qualified site inspection."
+  }
+}
