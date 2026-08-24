@@ -1,11 +1,10 @@
-# Add project dependencies here.
-matplotlib
-joblib
-numpy
-pandas
-Pillow
-PyYAML
-scikit-learn
-scikit-image
-torch
-torchvision
+joblib==1.5.3
+matplotlib==3.11.1
+numpy==2.5.1
+pandas==3.0.3
+Pillow==12.3.0
+PyYAML==6.0.3
+scikit-image==0.26.0
+scikit-learn==1.9.0
+torch==2.13.0
+torchvision==0.28.0
