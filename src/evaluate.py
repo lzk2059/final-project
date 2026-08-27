@@ -299,36 +299,47 @@ def plot_confusion_matrix(
 ) -> None:
     """Save one raw or row-normalized confusion matrix."""
 
-    figure, axis = plt.subplots(figsize=(11, 9))
-    image = axis.imshow(matrix, cmap="Blues", vmin=0, vmax=1 if normalized else None)
-    figure.colorbar(image, ax=axis)
-    axis.set(
-        xticks=range(len(class_names)),
-        yticks=range(len(class_names)),
-        xticklabels=class_names,
-        yticklabels=class_names,
-        xlabel="Predicted class",
-        ylabel="True class",
-        title="Normalized Confusion Matrix" if normalized else "Confusion Matrix",
+    figure, axis = plt.subplots(figsize=(10, 8))
+    image = axis.pcolormesh(
+        matrix,
+        cmap="Blues",
+        vmin=0,
+        vmax=1 if normalized else None,
+        shading="flat",
     )
-    plt.setp(axis.get_xticklabels(), rotation=45, ha="right")
+    figure.colorbar(image, ax=axis)
+    positions = np.arange(len(class_names)) + 0.5
+    axis.set_xticks(positions, class_names, rotation=45, ha="right")
+    axis.set_yticks(positions, class_names)
+    axis.set_aspect("equal")
+    axis.invert_yaxis()
+    axis.tick_params(axis="both", labelsize=15)
+    for label in (*axis.get_xticklabels(), *axis.get_yticklabels()):
+        label.set_fontweight("bold")
+    axis.set_xlabel("Predicted class", fontsize=20, fontweight="bold")
+    axis.set_ylabel("True class", fontsize=20, fontweight="bold")
+    axis.set_title(
+        "Normalized Confusion Matrix" if normalized else "Confusion Matrix",
+        fontsize=22,
+        fontweight="bold",
+    )
     threshold = matrix.max() / 2 if matrix.size else 0
     for row in range(len(class_names)):
         for column in range(len(class_names)):
             value = matrix[row, column]
             text = f"{value:.2f}" if normalized else str(int(value))
             axis.text(
-                column,
-                row,
+                column + 0.5,
+                row + 0.5,
                 text,
                 ha="center",
                 va="center",
-                fontsize=7,
+                fontsize=10,
                 color="white" if value > threshold else "black",
             )
     figure.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=300)
+    figure.savefig(path, dpi=600)
     plt.close(figure)
 
 
@@ -340,7 +351,7 @@ def plot_per_class_metrics(
     names = list(per_class)
     positions = np.arange(len(names))
     width = 0.25
-    figure, axis = plt.subplots(figsize=(13, 7))
+    figure, axis = plt.subplots(figsize=(14, 6))
     for offset, metric in zip((-width, 0, width), ("precision", "recall", "f1")):
         axis.bar(
             positions + offset,
@@ -349,14 +360,22 @@ def plot_per_class_metrics(
             label=metric.title(),
         )
     axis.set_ylim(0, 1)
-    axis.set_ylabel("Score")
-    axis.set_xticks(positions, names, rotation=45, ha="right")
-    axis.set_title("Per-class Classification Metrics")
+    axis.set_xlabel("Anomaly class", fontsize=20, fontweight="bold")
+    axis.set_ylabel("Score", fontsize=20, fontweight="bold")
+    axis.set_xticks(
+        positions, names, rotation=45, ha="right", fontsize=18
+    )
+    axis.set_title(
+        "Per-class Classification Metrics", fontsize=22, fontweight="bold"
+    )
+    axis.tick_params(axis="y", labelsize=18)
+    for label in (*axis.get_xticklabels(), *axis.get_yticklabels()):
+        label.set_fontweight("bold")
     axis.grid(axis="y", alpha=0.3)
-    axis.legend()
+    axis.legend(fontsize=16)
     figure.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(path, dpi=300)
+    figure.savefig(path, dpi=600)
     plt.close(figure)
 
 
@@ -375,7 +394,7 @@ def plot_training_history(history_path: Path, figure_dir: Path, experiment: str)
     }
     figure_dir.mkdir(parents=True, exist_ok=True)
     for metric, label in definitions.items():
-        figure, axis = plt.subplots(figsize=(8, 6))
+        figure, axis = plt.subplots(figsize=(10, 5.5))
         if metric == "learning_rate":
             default_rate = document.get("config", {}).get("learning_rate")
             rates = [row.get(metric, default_rate) for row in history]
@@ -391,13 +410,20 @@ def plot_training_history(history_path: Path, figure_dir: Path, experiment: str)
                     marker="o",
                     label=display,
                 )
-            axis.legend()
+            axis.legend(fontsize=14)
         if metric == "macro_f1":
             axis.axvline(best_epoch, color="tab:red", linestyle="--")
-        axis.set(xlabel="Epoch", ylabel=label, title=f"{experiment}: {label}")
+        axis.set_xlabel("Epoch", fontsize=18, fontweight="bold")
+        axis.set_ylabel(label, fontsize=18, fontweight="bold")
+        axis.set_title(
+            f"{experiment}: {label}", fontsize=20, fontweight="bold"
+        )
+        axis.tick_params(axis="both", labelsize=14)
+        for tick_label in (*axis.get_xticklabels(), *axis.get_yticklabels()):
+            tick_label.set_fontweight("bold")
         axis.grid(alpha=0.3)
         figure.tight_layout()
-        figure.savefig(figure_dir / f"{experiment}_{metric}.png", dpi=300)
+        figure.savefig(figure_dir / f"{experiment}_{metric}.png", dpi=400)
         plt.close(figure)
 
 

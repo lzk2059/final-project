@@ -97,7 +97,7 @@ def save_overlay(
     output_path: Path,
     predicted_class: str,
     confidence: float,
-) -> None:
+) -> tuple[np.ndarray, np.ndarray]:
     """Overlay model attention on the original grayscale infrared image."""
 
     with Image.open(image_path) as source:
@@ -121,20 +121,29 @@ def save_overlay(
             ),
             dtype=np.float32,
         ) / 255.0
-    figure, axis = plt.subplots(figsize=(5, 7))
-    axis.imshow(grayscale, cmap="gray", interpolation="nearest")
-    axis.imshow(cam, cmap="jet", alpha=0.45, interpolation="bilinear")
-    axis.set_title(f"{predicted_class} | confidence {confidence:.4f}")
+    grayscale_rgb = np.repeat(grayscale[..., None], 3, axis=2)
+    heatmap_rgb = plt.get_cmap("jet")(cam)[..., :3]
+    overlay_rgb = np.clip(
+        0.55 * grayscale_rgb + 0.45 * heatmap_rgb, 0.0, 1.0
+    )
+    figure, axis = plt.subplots(figsize=(4.5, 5.5))
+    axis.imshow(overlay_rgb, interpolation="bilinear")
+    axis.set_title(
+        f"{predicted_class} | confidence {confidence:.4f}",
+        fontsize=18,
+        fontweight="bold",
+    )
     axis.axis("off")
     figure.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(output_path, dpi=300, bbox_inches="tight")
+    figure.savefig(output_path, dpi=400, bbox_inches="tight")
     plt.close(figure)
+    return grayscale, overlay_rgb
 
 
 def save_case_report(
-    image_path: Path,
-    overlay_path: Path,
+    original: np.ndarray,
+    gradcam: np.ndarray,
     output_path: Path,
     prediction: dict[str, object],
 ) -> None:
@@ -143,20 +152,48 @@ def save_case_report(
     assessment = prediction.get("maintenance_assessment")
     if not isinstance(assessment, dict):
         raise ValueError("Prediction does not contain a maintenance assessment.")
-    with Image.open(image_path) as source, Image.open(overlay_path) as overlay:
-        original = np.asarray(source.convert("L").copy())
-        gradcam = np.asarray(overlay.convert("RGB").copy())
-
-    figure, axes = plt.subplots(1, 2, figsize=(12, 7))
+    figure = plt.figure(figsize=(8, 8))
+    axes = (
+        figure.add_axes((0.07, 0.38, 0.30, 0.48)),
+        figure.add_axes((0.63, 0.38, 0.30, 0.48)),
+    )
+    text_axis = figure.add_axes((0.05, 0.04, 0.90, 0.25))
     axes[0].imshow(original, cmap="gray", interpolation="nearest")
-    axes[0].set_title("Original infrared image")
     axes[1].imshow(gradcam)
-    axes[1].set_title("Grad-CAM heatmap")
     for axis in axes:
         axis.axis("off")
+        axis.set_anchor("C")
+    figure.text(
+        0.22,
+        0.94,
+        "Original infrared image",
+        ha="center",
+        va="top",
+        fontsize=22,
+        fontweight="bold",
+    )
+    figure.text(
+        0.78,
+        0.94,
+        "Grad-CAM heatmap",
+        ha="center",
+        va="top",
+        fontsize=22,
+        fontweight="bold",
+    )
+    figure.text(
+        0.78,
+        0.89,
+        f"{prediction['predicted_class']} | "
+        f"confidence {float(prediction['confidence']):.4f}",
+        ha="center",
+        va="top",
+        fontsize=16,
+        fontweight="bold",
+    )
 
     recommendation = textwrap.fill(
-        str(assessment["recommended_action"]), width=105
+        str(assessment["recommended_action"]), width=52
     )
     details = (
         f"Predicted class: {prediction['predicted_class']}\n"
@@ -164,10 +201,18 @@ def save_case_report(
         f"Risk level: {assessment['risk_level']}\n"
         f"Maintenance recommendation: {recommendation}"
     )
-    figure.text(0.05, 0.04, details, ha="left", va="bottom", fontsize=11)
-    figure.subplots_adjust(left=0.04, right=0.98, top=0.91, bottom=0.28, wspace=0.08)
+    text_axis.axis("off")
+    text_axis.text(
+        0.0,
+        1.0,
+        details,
+        ha="left",
+        va="top",
+        fontsize=18,
+        fontweight="bold",
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(output_path, dpi=300, bbox_inches="tight")
+    figure.savefig(output_path, dpi=400, bbox_inches="tight")
     plt.close(figure)
 
 
@@ -197,7 +242,7 @@ def explain_prediction(
     output_path = output_dir / prediction_path.name.replace(
         "_prediction.json", "_gradcam_overlay.png"
     )
-    save_overlay(
+    original, overlay = save_overlay(
         image_path,
         cam,
         output_path,
@@ -207,7 +252,7 @@ def explain_prediction(
     report_path = output_dir / prediction_path.name.replace(
         "_prediction.json", "_case_report.png"
     )
-    save_case_report(image_path, output_path, report_path, prediction)
+    save_case_report(original, overlay, report_path, prediction)
     return {
         "status": "success",
         "prediction": prediction_path.name,

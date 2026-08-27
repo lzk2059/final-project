@@ -170,16 +170,36 @@ def plot_metric(frame: pd.DataFrame, metric: str, title: str, path: Path) -> Non
     means = frame[f"{metric}_mean"].to_numpy(dtype=float)
     errors = frame[f"{metric}_std"].to_numpy(dtype=float)
     positions = np.arange(len(frame))
-    figure, axis = plt.subplots(figsize=(9, 5.5))
-    bars = axis.bar(positions, means, yerr=errors, capsize=5, color="#4472C4")
-    axis.set_xticks(positions, frame["model"], rotation=18, ha="right")
-    axis.set_ylabel(metric.replace("_", " ").title())
-    axis.set_title(title)
+    figure, axis = plt.subplots(figsize=(11, 6))
+    bars = axis.bar(
+        positions,
+        means,
+        yerr=errors,
+        capsize=6,
+        color="#4472C4",
+        error_kw={"elinewidth": 1.6, "capthick": 1.6},
+    )
+    axis.set_xticks(
+        positions, frame["model"], rotation=18, ha="right", fontsize=16
+    )
+    axis.set_ylabel(
+        metric.replace("_", " ").title(), fontsize=18, fontweight="bold"
+    )
+    axis.set_title(title, fontsize=22, fontweight="bold")
+    axis.tick_params(axis="y", labelsize=16)
+    for label in (*axis.get_xticklabels(), *axis.get_yticklabels()):
+        label.set_fontweight("bold")
     axis.set_ylim(0, min(1.0, max(means + errors) + 0.12))
     axis.grid(axis="y", alpha=0.25)
-    axis.bar_label(bars, labels=[f"{value:.4f}" for value in means], padding=3)
+    axis.bar_label(
+        bars,
+        labels=[f"{value:.4f}" for value in means],
+        padding=4,
+        fontsize=15,
+        fontweight="bold",
+    )
     figure.tight_layout()
-    figure.savefig(path, dpi=300)
+    figure.savefig(path, dpi=400)
     plt.close(figure)
 
 
@@ -196,16 +216,39 @@ def plot_improved_per_class_f1(per_class: pd.DataFrame, path: Path) -> None:
     means = frame["f1_mean"].to_numpy(dtype=float)
     errors = frame["f1_std"].to_numpy(dtype=float)
     positions = np.arange(len(frame))
-    figure, axis = plt.subplots(figsize=(12, 6))
-    bars = axis.bar(positions, means, yerr=errors, capsize=4, color="#4472C4")
-    axis.set_xticks(positions, CLASS_NAMES, rotation=35, ha="right")
-    axis.set_ylabel("F1-score")
-    axis.set_title("Improved EfficientNet Per-Class Test F1 (Mean ± SD)")
-    axis.set_ylim(0, 1.0)
+    figure, axis = plt.subplots(figsize=(14, 6))
+    bars = axis.bar(
+        positions,
+        means,
+        yerr=errors,
+        capsize=5,
+        color="#4472C4",
+        error_kw={"elinewidth": 1.5, "capthick": 1.5},
+    )
+    axis.set_xticks(
+        positions, CLASS_NAMES, rotation=45, ha="right", fontsize=18
+    )
+    axis.set_xlabel("Anomaly class", fontsize=20, fontweight="bold")
+    axis.set_ylabel("F1-score", fontsize=20, fontweight="bold")
+    axis.set_title(
+        "Improved EfficientNet Per-Class Test F1 (Mean ± SD)",
+        fontsize=22,
+        fontweight="bold",
+    )
+    axis.tick_params(axis="y", labelsize=18)
+    for label in (*axis.get_xticklabels(), *axis.get_yticklabels()):
+        label.set_fontweight("bold")
+    axis.set_ylim(0, 1.08)
     axis.grid(axis="y", alpha=0.25)
-    axis.bar_label(bars, labels=[f"{value:.4f}" for value in means], padding=3)
+    axis.bar_label(
+        bars,
+        labels=[f"{value:.4f}" for value in means],
+        padding=4,
+        fontsize=16,
+        fontweight="bold",
+    )
     figure.tight_layout()
-    figure.savefig(path, dpi=300)
+    figure.savefig(path, dpi=600)
     plt.close(figure)
 
 
@@ -264,7 +307,10 @@ def compare_results(root: Path, split: str, seeds: list[int]) -> None:
 
     winner = summary.loc[summary["macro_f1_mean"].idxmax()]
     print(f"Runs: {len(runs)} | Seeds: {seeds} | Split: {split}")
-    print(f"Best mean Macro-F1: {winner['model']} = {winner['macro_f1_mean']:.4f} ± {winner['macro_f1_std']:.4f}")
+    print(
+        f"Best mean Macro-F1: {winner['model']} = "
+        f"{winner['macro_f1_mean']:.4f} +/- {winner['macro_f1_std']:.4f}"
+    )
     print(f"Tables: {output_dir.resolve()}")
     print(f"Figures: {figure_dir.resolve()}")
 
